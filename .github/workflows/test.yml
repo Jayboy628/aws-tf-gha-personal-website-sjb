@@ -1,4 +1,4 @@
-name: Deploy Website Infrastructure
+name: Terraform
 
 on:
   push:
@@ -10,44 +10,52 @@ permissions:
   id-token: write
   contents: read
 
-env:
-  AWS_REGION: ${{ secrets.AWS_REGION }}
-  BUCKET_NAME: ${{ secrets.BUCKET_NAME }}
-
 jobs:
   terraform:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     defaults:
       run:
-        shell: bash
         working-directory: terraform_project
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v6
         with:
           role-to-assume: ${{ secrets.IAM_ROLE }}
           aws-region: ${{ secrets.AWS_REGION }}
-          role-session-name: GitHubActionsTerraform
 
       - name: Set up Terraform
-        uses: hashicorp/setup-terraform@v3
+        uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_version: 1.15.5
 
       - name: Verify AWS identity
         run: aws sts get-caller-identity
 
-      - name: Terraform Format Check
-        run: terraform fmt -check
+      - name: Terraform format check
+        run: terraform fmt -check -diff
 
-      - name: Terraform Initialize
+      - name: Terraform initialize
         run: terraform init
 
-      - name: Terraform Validate
+      - name: Terraform validate
         run: terraform validate
 
-      - name: Terraform Plan
-        run: terraform plan -var="bucket_name=${BUCKET_NAME}"
+      - name: Terraform plan
+        run: terraform plan
+      
+      - name: Terraform apply
+        if: github.ref == 'refs/heads/main'
+        run: terraform apply -auto-approve
+
+      - name: Upload Files to S3 Bucket
+        run: |
+          aws s3 cp ./website/index.html s3://${{ secrets.BUCKET_NAME }}/index.html --delete
+          aws s3 cp ./website/script.js s3://${{ secrets.BUCKET_NAME }}/script.js --delete
+          aws s3 cp ./website/style.css s3://${{ secrets.BUCKET_NAME }}/style.css --delete
+          aws s3 cp --recursive assets/ s3://${{ secrets.BUCKET_NAME }}/ --delete
+          
