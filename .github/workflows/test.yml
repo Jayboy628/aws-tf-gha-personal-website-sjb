@@ -9,23 +9,23 @@ on:
 permissions:
   id-token: write
   contents: read
-#   actions: read
-#   pull-requests: write
 
 jobs:
-    listing_s3_buckets:
-        runs-on: ubuntu-latest
-        steps:
-            - name: Set up AWS CLI
-              uses: aws-actions/configure-aws-credentials@v6
-              with:
-                role-to-assume: ${{ secrets.IAM_ROLE}}
-                aws-region: ${{ secrets.AWS_REGION }}
-                aws-profile: de_jay_east
+  listing_s3_buckets:
+    runs-on: ubuntu-24.04
 
-            - name: List S3 Buckets
-              env:
-                AWS_REGION: ${{ secrets.AWS_REGION }}
-              run: |
-                echo "Listing S3 Buckets in region: $AWS_REGION"
-                aws s3 ls --region $AWS_REGION
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v6.1.0
+        with:
+          role-to-assume: ${{ secrets.IAM_ROLE }}
+          aws-region: ${{ secrets.AWS_REGION }}
+          role-session-name: GitHubActionsS3Listing
+
+      - name: Verify AWS identity
+        run: aws sts get-caller-identity
+
+      - name: List S3 buckets
+        run: |
+          echo "Listing S3 buckets in region: $AWS_REGION"
+          aws s3 ls
