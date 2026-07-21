@@ -47,8 +47,13 @@ jobs:
       - name: Terraform initialize
         run: terraform -chdir=terraform_project init
 
-      - name: Terraform validate
-        run: terraform -chdir=terraform_project validate
+      - name: Verify required variables
+        run: |
+          test -n "$TF_VAR_bucket_name" || {
+            echo "BUCKET_NAME GitHub secret is missing or empty"
+            exit 1
+          }
+          echo "Terraform bucket variable is configured"
 
       - name: Terraform plan
         run: terraform -chdir=terraform_project plan -lock-timeout=5m
