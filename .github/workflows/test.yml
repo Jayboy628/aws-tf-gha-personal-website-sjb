@@ -57,6 +57,13 @@ jobs:
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         run: terraform -chdir=terraform_project apply -auto-approve
 
+      - name: Terraform plan
+        run: terraform -chdir=terraform_project plan -input=false -lock-timeout=5m
+
+      - name: Terraform apply
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: terraform -chdir=terraform_project apply -input=false -auto-approve
+
       - name: Upload website files to S3
         if: github.ref == 'refs/heads/main'
         run: |
