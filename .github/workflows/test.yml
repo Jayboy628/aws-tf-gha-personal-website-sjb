@@ -45,7 +45,10 @@ jobs:
         run: terraform -chdir=terraform_project fmt -check -diff
 
       - name: Terraform initialize
-        run: terraform -chdir=terraform_project init
+        run: terraform -chdir=terraform_project init -input=false
+
+      - name: Terraform validate
+        run: terraform -chdir=terraform_project validate
 
       - name: Verify required variables
         run: |
@@ -56,21 +59,22 @@ jobs:
           echo "Terraform bucket variable is configured"
 
       - name: Terraform plan
-        run: terraform -chdir=terraform_project plan -lock-timeout=5m
+        run: |
+          terraform -chdir=terraform_project plan \
+            -input=false \
+            -lock-timeout=5m \
+            -out=tfplan
 
       - name: Terraform apply
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-        run: terraform -chdir=terraform_project apply -auto-approve
-
-      - name: Terraform plan
-        run: terraform -chdir=terraform_project plan -input=false -lock-timeout=5m
-
-      - name: Terraform apply
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-        run: terraform -chdir=terraform_project apply -input=false -auto-approve
+        run: |
+          terraform -chdir=terraform_project apply \
+            -input=false \
+            -auto-approve \
+            tfplan
 
       - name: Upload website files to S3
-        if: github.ref == 'refs/heads/main'
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         run: |
           aws s3 cp index.html "s3://${{ secrets.BUCKET_NAME }}/index.html"
           aws s3 cp script.js "s3://${{ secrets.BUCKET_NAME }}/script.js"
