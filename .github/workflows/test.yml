@@ -10,13 +10,13 @@ permissions:
   id-token: write
   contents: read
 
+env:
+  AWS_REGION: ${{ secrets.AWS_REGION }}
+  TF_VAR_bucket_name: ${{ secrets.BUCKET_NAME }}
+
 jobs:
   terraform:
     runs-on: ubuntu-24.04
-
-    defaults:
-      run:
-        working-directory: terraform_project
 
     steps:
       - name: Checkout repository
@@ -27,6 +27,7 @@ jobs:
         with:
           role-to-assume: ${{ secrets.IAM_ROLE }}
           aws-region: ${{ secrets.AWS_REGION }}
+          role-session-name: GitHubActionsTerraform
 
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v4
@@ -37,25 +38,28 @@ jobs:
         run: aws sts get-caller-identity
 
       - name: Terraform format check
-        run: terraform fmt -check -diff
+        run: terraform -chdir=terraform_project fmt -check -diff
 
       - name: Terraform initialize
-        run: terraform init
+        run: terraform -chdir=terraform_project init
 
       - name: Terraform validate
-        run: terraform validate
+        run: terraform -chdir=terraform_project validate
 
       - name: Terraform plan
-        run: terraform plan
-      
-      - name: Terraform apply
-        if: github.ref == 'refs/heads/main'
-        run: terraform apply -auto-approve
+        run: terraform -chdir=terraform_project plan
 
-      - name: Upload Files to S3 Bucket
+      - name: Terraform apply
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: terraform -chdir=terraform_project apply -auto-approve
+
+      - name: Upload website files to S3
+        if: github.ref == 'refs/heads/main'
         run: |
-          aws s3 cp ./website/index.html s3://${{ secrets.BUCKET_NAME }}/index.html --delete
-          aws s3 cp ./website/script.js s3://${{ secrets.BUCKET_NAME }}/script.js --delete
-          aws s3 cp ./website/style.css s3://${{ secrets.BUCKET_NAME }}/style.css --delete
-          aws s3 cp --recursive assets/ s3://${{ secrets.BUCKET_NAME }}/ --delete
-          
+          aws s3 cp index.html "s3://${{ secrets.BUCKET_NAME }}/index.html"
+          aws s3 cp script.js "s3://${{ secrets.BUCKET_NAME }}/script.js"
+          aws s3 cp styles.css "s3://${{ secrets.BUCKET_NAME }}/styles.css"
+
+          aws s3 sync assets/ \
+            "s3://${{ secrets.BUCKET_NAME }}/assets/" \
+            --delete
