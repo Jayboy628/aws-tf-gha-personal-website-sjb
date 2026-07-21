@@ -1,0 +1,14 @@
+name: Test
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+    log_message:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Log message
+              run: echo "Hello, this is a test message!"
