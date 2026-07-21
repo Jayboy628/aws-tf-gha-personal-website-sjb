@@ -1,4 +1,4 @@
-name: Test
+name: Listing S3 Buckets
 
 on:
   push:
@@ -7,8 +7,18 @@ on:
   workflow_dispatch:
 
 jobs:
-    log_message:
+    listing_s3_buckets:
         runs-on: ubuntu-latest
         steps:
-            - name: Log message
-              run: echo "Hello, this is a test message!"
+            - name: Set up AWS CLI
+              uses: aws-actions/configure-aws-credentials@v6
+              with:
+                role-to-assume: ${{ secrets.IAM_ROLE}}
+                aws-region: ${{ secrets.AWS_REGION }}
+
+            - name: List S3 Buckets
+              env:
+                AWS_REGION: ${{ secrets.AWS_REGION }}
+              run: |
+                echo "Listing S3 Buckets in region: $AWS_REGION"
+                aws s3 ls --region $AWS_REGION
