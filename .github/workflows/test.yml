@@ -21,6 +21,7 @@ jobs:
               with:
                 role-to-assume: ${{ secrets.IAM_ROLE}}
                 aws-region: ${{ secrets.AWS_REGION }}
+                aws-profile: de_jay_east
 
             - name: List S3 Buckets
               env:
