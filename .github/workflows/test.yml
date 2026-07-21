@@ -1,4 +1,4 @@
-name: Create an S3 Bucket
+name: Deploy Website Infrastructure
 
 on:
   push:
@@ -10,41 +10,44 @@ permissions:
   id-token: write
   contents: read
 
+env:
+  AWS_REGION: ${{ secrets.AWS_REGION }}
+  BUCKET_NAME: ${{ secrets.BUCKET_NAME }}
+
 jobs:
-  creating_buckets:
-    runs-on: ubuntu-24.04
+  terraform:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        shell: bash
+        working-directory: terraform_project
 
     steps:
-
       - name: Checkout repository
-        uses: actions/checkout@v7
+        uses: actions/checkout@v4
 
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v6.1.0
+        uses: aws-actions/configure-aws-credentials@v6
         with:
           role-to-assume: ${{ secrets.IAM_ROLE }}
           aws-region: ${{ secrets.AWS_REGION }}
-          role-session-name: GitHubActionsS3Listing
+          role-session-name: GitHubActionsTerraform
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
 
       - name: Verify AWS identity
         run: aws sts get-caller-identity
 
-      - name: Install Terraform
-        uses: hashicorp/setup-terraform@v2
+      - name: Terraform Format Check
+        run: terraform fmt -check
 
-      - name: Initialize Terraform
+      - name: Terraform Initialize
         run: terraform init
-        working-directory: terraform_project
+
+      - name: Terraform Validate
+        run: terraform validate
 
       - name: Terraform Plan
-        env: 
-          BUCKET_NAME: ${{ secrets.BUCKET_NAME }}
-        run: terraform plan \
-          -var "bucket_name=$BUCKET_NAME" 
-        working-directory: terraform_project
-
-      - name: Terraform Apply
-        env: 
-          TF_VAR_bucket_name: ${{ secrets.BUCKET_NAME }}
-        run: terraform apply -auto-approve 
-        working-directory: terraform_project
+        run: terraform plan -var="bucket_name=${BUCKET_NAME}"
