@@ -77,8 +77,8 @@ jobs:
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         run: |
           aws s3 cp index.html "s3://${{ secrets.BUCKET_NAME }}/index.html"
-          aws s3 cp script.js "s3://${{ secrets.BUCKET_NAME }}/script.js"
-          aws s3 cp styles.css "s3://${{ secrets.BUCKET_NAME }}/styles.css"
+          aws s3 cp js/script.js "s3://${{ secrets.BUCKET_NAME }}/js/script.js"
+          aws s3 cp css/styles.css "s3://${{ secrets.BUCKET_NAME }}/css/styles.css"
 
           aws s3 sync assets/ \
             "s3://${{ secrets.BUCKET_NAME }}/assets/" \
