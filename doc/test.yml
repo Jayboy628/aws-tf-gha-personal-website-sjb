@@ -41,13 +41,15 @@ jobs:
             console.log('repository_id:', payload.repository_id);
             console.log('repository_owner:', payload.repository_owner);
             console.log('repository_owner_id:', payload.repository_owner_id);
+            console.log('iat:', payload.iat);
+            console.log('exp:', payload.exp);
 
-            - name: Configure AWS credentials
-              uses: aws-actions/configure-aws-credentials@v6
-              with:
-                role-to-assume: ${{ secrets.IAM_ROLE }}
-                aws-region: ${{ secrets.AWS_REGION }}
-                role-session-name: GitHubActionsTerraform
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ secrets.IAM_ROLE }}
+          aws-region: ${{ secrets.AWS_REGION }}
+          role-session-name: GitHubActionsTerraform
 
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v4
