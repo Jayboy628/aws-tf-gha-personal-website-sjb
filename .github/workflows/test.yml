@@ -42,6 +42,7 @@ jobs:
             console.log('repository_owner:', payload.repository_owner);
             console.log('repository_owner_id:', payload.repository_owner_id);
             console.log('ref:', payload.ref);
+
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v6
         with:
@@ -82,7 +83,7 @@ jobs:
             -out=tfplan
 
       - name: Terraform apply
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        if: github.ref == 'refs/heads/main'
         run: |
           terraform -chdir=infa apply \
             -input=false \
@@ -90,9 +91,10 @@ jobs:
             tfplan
 
       - name: Upload website files to S3
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        if: github.ref == 'refs/heads/main'
         run: |
           aws s3 cp index.html "s3://${{ secrets.BUCKET_NAME }}/index.html"
+          aws s3 cp error.html "s3://${{ secrets.BUCKET_NAME }}/error.html"
           aws s3 cp js/script.js "s3://${{ secrets.BUCKET_NAME }}/js/script.js"
           aws s3 cp css/styles.css "s3://${{ secrets.BUCKET_NAME }}/css/styles.css"
 
